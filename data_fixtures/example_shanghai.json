@@ -1,0 +1,93 @@
+{
+  "houses": [
+    {
+      "title": "浦东新区4室舒适房源",
+      "district": "浦东新区",
+      "address": "浦东新区陆家嘴街道212号陆家嘴里",
+      "price": 1089.47,
+      "unit_price": 86589.68,
+      "area": 125.82,
+      "house_type": "4室",
+      "floor": "3/11",
+      "total_floors": 11,
+      "orientation": "东南",
+      "decoration": "精装",
+      "build_year": 2005,
+      "latitude": 31.297235,
+      "longitude": 121.258571,
+      "description": "位于浦东新区陆家嘴核心区域，陆家嘴里，4室户型，建筑面积125.82平方米，南北朝向，豪华装修，楼层3/11，房龄20年。周边配套设施齐全，交通便利，紧邻地铁站，周边有大型商场、学校、医院等生活配套。",
+      "agent": "agent1",
+      "status": "available"
+    },
+    {
+      "title": "浦东新区3室优质房源",
+      "district": "浦东新区",
+      "address": "浦东新区金桥街道3号金桥里",
+      "price": 1186.22,
+      "unit_price": 75535.93,
+      "area": 157.04,
+      "house_type": "3室",
+      "floor": "9/14",
+      "total_floors": 14,
+      "orientation": "南",
+      "decoration": "精装",
+      "build_year": 2016,
+      "latitude": 31.153161,
+      "longitude": 121.552493,
+      "description": "位于浦东新区金桥核心区域，金桥里，3室户型，建筑面积157.04平方米，南朝向，毛坯，楼层9/14，房龄9年。周边配套设施齐全，交通便利，紧邻地铁站，周边有大型商场、学校、医院等生活配套。",
+      "agent": "agent1",
+      "status": "available"
+    },
+    {
+      "title": "浦东新区2室优质房源",
+      "district": "浦东新区",
+      "address": "浦东新区陆家嘴街道471号陆家嘴坊",
+      "price": 486.64,
+      "unit_price": 67853.14,
+      "area": 71.72,
+      "house_type": "2室",
+      "floor": "1/13",
+      "total_floors": 13,
+      "orientation": "东南",
+      "decoration": "精装",
+      "build_year": 2008,
+      "latitude": 31.02525,
+      "longitude": 121.522074,
+      "description": "位于浦东新区陆家嘴核心区域，陆家嘴坊，2室户型，建筑面积71.72平方米，东南朝向，精装，楼层1/13，房龄17年。周边配套设施齐全，交通便利，紧邻地铁站，周边有大型商场、学校、医院等生活配套。",
+      "agent": "agent1",
+      "status": "available"
+    }
+  ],
+  "transactions": [
+    {
+      "house_address": "浦东新区陆家嘴街道212号陆家嘴里",
+      "deal_price": 1029.42,
+      "deal_date": "2025-11-02",
+      "buyer_name": "黄先生/女士"
+    },
+    {
+      "house_address": "浦东新区陆家嘴街道212号陆家嘴里",
+      "deal_price": 929.68,
+      "deal_date": "2025-09-03",
+      "buyer_name": "刘先生/女士"
+    },
+    {
+      "house_address": "浦东新区金桥街道3号金桥里",
+      "deal_price": 1062.67,
+      "deal_date": "2025-05-17",
+      "buyer_name": "郭先生/女士"
+    },
+    {
+      "house_address": "浦东新区陆家嘴街道471号陆家嘴坊",
+      "deal_price": 454.84,
+      "deal_date": "2025-09-30",
+      "buyer_name": "罗先生/女士"
+    },
+    {
+      "house_address": "浦东新区陆家嘴街道471号陆家嘴坊",
+      "deal_price": 440.78,
+      "deal_date": "2025-09-11",
+      "buyer_name": "马先生/女士"
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+{
+  "说明": "这是一个JSON数据模板文件，复制此文件并修改内容即可使用",
+  "houses": [
+    {
+      "title": "浦东新区2室精品房源",
+      "district": "浦东新区",
+      "address": "浦东新区陆家嘴街道100号东方明珠小区1号楼101室",
+      "price": 500.00,
+      "unit_price": 50000.00,
+      "area": 100.00,
+      "house_type": "2室",
+      "floor": "10/30",
+      "total_floors": 30,
+      "orientation": "南",
+      "decoration": "精装",
+      "build_year": 2020,
+      "latitude": 31.2397,
+      "longitude": 121.4999,
+      "description": "位于陆家嘴核心区域，紧邻地铁2号线，精装修，拎包入住。周边配套齐全，有商场、学校、医院。",
+      "agent": "agent1",
+      "status": "available"
+    },
+    {
+      "title": "徐汇区3室豪华房源",
+      "district": "徐汇区",
+      "address": "徐汇区徐家汇街道200号汇金大厦2号楼202室",
+      "price": 800.00,
+      "unit_price": 60000.00,
+      "area": 133.33,
+      "house_type": "3室",
+      "floor": "15/20",
+      "total_floors": 20,
+      "orientation": "南北",
+      "decoration": "豪华装修",
+      "build_year": 2018,
+      "latitude": 31.1947,
+      "longitude": 121.4338,
+      "description": "徐家汇商圈核心地段，豪华装修，配套齐全。地铁1/9/11号线徐家汇站，交通便利。",
+      "agent": "agent1",
+      "status": "available"
+    },
+    {
+      "title": "黄浦区1室温馨房源",
+      "district": "黄浦区",
+      "address": "黄浦区人民广场街道300号人民大厦3号楼303室",
+      "price": 350.00,
+      "unit_price": 70000.00,
+      "area": 50.00,
+      "house_type": "1室",
+      "floor": "8/15",
+      "total_floors": 15,
+      "orientation": "东南",
+      "decoration": "简装",
+      "build_year": 2015,
+      "latitude": 31.2304,
+      "longitude": 121.4737,
+      "description": "人民广场核心区域，适合单身或情侣居住。地铁1/2/8号线，出行方便。",
+      "agent": "agent1",
+      "status": "available"
+    }
+  ],
+  "transactions": [
+    {
+      "house_address": "浦东新区陆家嘴街道100号东方明珠小区1号楼101室",
+      "deal_price": 480.00,
+      "deal_date": "2025-06-15",
+      "buyer_name": "张先生"
+    },
+    {
+      "house_address": "浦东新区陆家嘴街道100号东方明珠小区1号楼101室",
+      "deal_price": 490.00,
+      "deal_date": "2025-08-20",
+      "buyer_name": "李女士"
+    },
+    {
+      "house_address": "浦东新区陆家嘴街道100号东方明珠小区1号楼101室",
+      "deal_price": 495.00,
+      "deal_date": "2025-10-10",
+      "buyer_name": "王先生"
+    },
+    {
+      "house_address": "徐汇区徐家汇街道200号汇金大厦2号楼202室",
+      "deal_price": 780.00,
+      "deal_date": "2025-07-10",
+      "buyer_name": "赵女士"
+    },
+    {
+      "house_address": "徐汇区徐家汇街道200号汇金大厦2号楼202室",
+      "deal_price": 790.00,
+      "deal_date": "2025-09-05",
+      "buyer_name": "刘先生"
+    },
+    {
+      "house_address": "黄浦区人民广场街道300号人民大厦3号楼303室",
+      "deal_price": 340.00,
+      "deal_date": "2025-05-20",
+      "buyer_name": "陈女士"
+    },
+    {
+      "house_address": "黄浦区人民广场街道300号人民大厦3号楼303室",
+      "deal_price": 345.00,
+      "deal_date": "2025-08-15",
+      "buyer_name": "杨先生"
+    }
+  ]
+}
+
