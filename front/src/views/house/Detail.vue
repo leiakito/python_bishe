@@ -31,6 +31,15 @@
 
         <div class="house-actions">
           <el-button
+            :type="isPurchased ? 'success' : 'danger'"
+            :icon="isPurchased ? 'CircleCheck' : 'ShoppingCart'"
+            size="large"
+            @click="handlePurchase"
+            :disabled="house.status !== 'available' || isPurchased"
+          >
+            {{ isPurchased ? '已购买' : '立即购买' }}
+          </el-button>
+          <el-button
             :type="isFavorited ? 'warning' : 'default'"
             :icon="isFavorited ? 'StarFilled' : 'Star'"
             @click="handleFavorite"
@@ -218,7 +227,7 @@ import { getHouseDetail, getHouseList } from '@/api/house'
 import { toggleFavorite, checkFavorite, createPriceAlert, checkHouseAlert } from '@/api/favorite'
 import { useUserStore } from '@/stores/user'
 import { formatPrice, formatDate, getHouseStatusText, getHouseStatusType } from '@/utils'
-import { ElMessage, ElNotification } from 'element-plus'
+import { ElMessage, ElNotification, ElMessageBox } from 'element-plus'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 
@@ -229,6 +238,7 @@ const userStore = useUserStore()
 const loading = ref(false)
 const house = ref(null)
 const isFavorited = ref(false)
+const isPurchased = ref(false)
 const recommendHouses = ref([])
 const showAlertDialog = ref(false)
 const showShareDialog = ref(false)
@@ -259,6 +269,9 @@ async function fetchHouseDetail() {
       house.value = res.data
       alertForm.target_price = res.data.price
       
+      // 检查购买状态
+      checkPurchaseStatus()
+      
       // 检查收藏状态和价格提醒
       if (userStore.isLoggedIn) {
         checkFavoriteStatus()
@@ -279,6 +292,76 @@ async function fetchHouseDetail() {
     router.push('/houses')
   } finally {
     loading.value = false
+  }
+}
+
+// 检查购买状态
+function checkPurchaseStatus() {
+  const purchasedHouses = JSON.parse(localStorage.getItem('purchasedHouses') || '[]')
+  isPurchased.value = purchasedHouses.includes(route.params.id)
+}
+
+// 处理购买
+async function handlePurchase() {
+  if (!userStore.isLoggedIn) {
+    ElMessage.warning('请先登录后再购买')
+    router.push('/login')
+    return
+  }
+
+  if (house.value.status !== 'available') {
+    ElMessage.warning('该房源当前不可购买')
+    return
+  }
+
+  // 显示确认对话框
+  try {
+    await ElMessageBox.confirm(
+      `确认购买此房源？\n\n房源：${house.value.title}\n价格：${formatPrice(house.value.price)} 万元\n地址：${house.value.address}`,
+      '确认购买',
+      {
+        confirmButtonText: '确认购买',
+        cancelButtonText: '取消',
+        type: 'warning',
+        dangerouslyUseHTMLString: false
+      }
+    )
+
+    // 模拟购买处理
+    const purchasedHouses = JSON.parse(localStorage.getItem('purchasedHouses') || '[]')
+    
+    if (!purchasedHouses.includes(route.params.id)) {
+      purchasedHouses.push(route.params.id)
+      localStorage.setItem('purchasedHouses', JSON.stringify(purchasedHouses))
+      
+      // 保存购买详情
+      const purchaseDetails = JSON.parse(localStorage.getItem('purchaseDetails') || '{}')
+      purchaseDetails[route.params.id] = {
+        houseId: house.value.id,
+        title: house.value.title,
+        price: house.value.price,
+        address: house.value.address,
+        purchaseDate: new Date().toISOString(),
+        userId: userStore.userInfo?.id
+      }
+      localStorage.setItem('purchaseDetails', JSON.stringify(purchaseDetails))
+    }
+
+    isPurchased.value = true
+
+    // 显示成功消息
+    ElNotification({
+      title: '🎉 购买成功',
+      message: `恭喜您成功购买房源！\n房源：${house.value.title}\n价格：${formatPrice(house.value.price)} 万元\n\n我们的工作人员将尽快与您联系。`,
+      type: 'success',
+      duration: 6000,
+      position: 'top-right'
+    })
+
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('购买失败:', error)
+    }
   }
 }
 
@@ -594,6 +677,37 @@ onUnmounted(() => {
     .house-actions {
       display: flex;
       gap: 10px;
+      
+      .el-button {
+        &:first-child {
+          // 购买按钮样式
+          font-size: 16px;
+          font-weight: 600;
+          padding: 15px 30px;
+          
+          &.el-button--danger {
+            background: linear-gradient(135deg, #f56c6c 0%, #e04949 100%);
+            border: none;
+            box-shadow: 0 4px 12px rgba(245, 108, 108, 0.4);
+            
+            &:hover {
+              box-shadow: 0 6px 16px rgba(245, 108, 108, 0.5);
+              transform: translateY(-2px);
+              transition: all 0.3s;
+            }
+          }
+          
+          &.el-button--success {
+            background: linear-gradient(135deg, #67c23a 0%, #5daf34 100%);
+            border: none;
+            cursor: not-allowed;
+          }
+          
+          &:disabled {
+            opacity: 0.7;
+          }
+        }
+      }
     }
   }
 

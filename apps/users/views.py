@@ -130,6 +130,11 @@ class UserViewSet(viewsets.ModelViewSet):
         用户注册
         POST /api/users/register/
         """
+        # 调试日志
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"注册请求数据: {request.data}")
+        
         serializer = UserRegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -140,6 +145,9 @@ class UserViewSet(viewsets.ModelViewSet):
                 },
                 msg='注册成功'
             )
+        
+        # 记录验证错误
+        logger.error(f"注册验证失败: {serializer.errors}")
         return error_response(msg='注册失败', data=serializer.errors)
     
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])

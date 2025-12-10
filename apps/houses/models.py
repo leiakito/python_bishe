@@ -76,7 +76,7 @@ class House(BaseModel):
     # 房源详情
     description = models.TextField(blank=True, verbose_name='房源描述')
     cover_image = models.ImageField(upload_to='houses/', null=True, 
-                                    blank=True, verbose_name='封面图')
+                                    blank=True, verbose_name='封面图', max_length=500)
     
     # 状态与发布者
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, 
@@ -98,6 +98,32 @@ class House(BaseModel):
     
     def __str__(self):
         return self.title
+
+    def get_cover_image_url(self):
+        """
+        返回封面图URL, 支持本地文件和远程URL.
+        """
+        url = self._resolve_field_file_url(self.cover_image)
+        if url:
+            return url
+        first_image = self.images.first()
+        if first_image:
+            return self._resolve_field_file_url(first_image.image)
+        return None
+
+    @staticmethod
+    def _resolve_field_file_url(field_file):
+        if not field_file:
+            return None
+        name = getattr(field_file, 'name', None)
+        if name and str(name).lower().startswith(('http://', 'https://')):
+            return str(name)
+        try:
+            return field_file.url
+        except Exception:
+            if name and str(name).lower().startswith(('http://', 'https://')):
+                return str(name)
+        return None
 
 
 class HouseImage(BaseModel):
@@ -137,4 +163,3 @@ class Transaction(BaseModel):
     
     def __str__(self):
         return f"{self.house.title} - {self.deal_date}"
-

@@ -16,12 +16,16 @@ class User(AbstractUser):
         ('admin', '管理员'),
     ]
     
+    # 重写email字段,设为必填
+    email = models.EmailField(unique=True, verbose_name='邮箱')
     phone = models.CharField(max_length=11, unique=True, verbose_name='手机号')
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True, verbose_name='头像')
     role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='user', verbose_name='角色')
     real_name = models.CharField(max_length=50, blank=True, verbose_name='真实姓名')
     company = models.CharField(max_length=100, blank=True, verbose_name='所属公司')
     is_verified = models.BooleanField(default=False, verbose_name='是否认证')
+    
+    REQUIRED_FIELDS = ['email', 'phone']  # 创建超级用户时需要的额外字段
     
     class Meta:
         db_table = 'users'

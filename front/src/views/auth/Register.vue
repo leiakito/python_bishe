@@ -184,18 +184,27 @@ async function handleRegister() {
         console.error('错误响应数据:', error.response?.data)
         let errorMsg = '注册失败'
         if (error.response && error.response.data) {
-          const data = error.response.data
-          console.log('详细错误信息:', data)
-          if (typeof data === 'object') {
-            // 显示第一个字段的错误信息
-            const firstError = Object.values(data)[0]
-            if (Array.isArray(firstError)) {
-              errorMsg = firstError[0]
-            } else if (typeof firstError === 'string') {
-              errorMsg = firstError
-            } else {
-              errorMsg = data.msg || data.detail || errorMsg
+          const responseData = error.response.data
+          console.log('详细错误信息:', responseData)
+          
+          // 如果有data.data字段，说明错误信息在里面
+          if (responseData.data && typeof responseData.data === 'object') {
+            const errors = responseData.data
+            console.log('验证错误详情:', errors)
+            
+            // 获取第一个字段的错误信息
+            const errorFields = Object.keys(errors)
+            if (errorFields.length > 0) {
+              const firstField = errorFields[0]
+              const firstError = errors[firstField]
+              if (Array.isArray(firstError)) {
+                errorMsg = `${firstField}: ${firstError[0]}`
+              } else {
+                errorMsg = `${firstField}: ${firstError}`
+              }
             }
+          } else if (responseData.msg) {
+            errorMsg = responseData.msg
           }
         }
         ElMessage.error(errorMsg)

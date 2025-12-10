@@ -62,27 +62,13 @@ class HouseListSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         request = self.context.get('request')
         
-        # 处理封面图：优先使用cover_image，没有则使用第一张关联图片
-        cover_url = None
-        if instance.cover_image:
-            cover_url = instance.cover_image.url
-        else:
-            # 如果没有封面图，尝试获取第一张关联图片
-            first_image = instance.images.first()
-            if first_image:
-                cover_url = first_image.image.url
-        
-        # 构建完整URL
-        if cover_url:
-            if request:
-                try:
-                    representation['cover_image'] = request.build_absolute_uri(cover_url)
-                except Exception:
-                    representation['cover_image'] = cover_url
-            else:
-                representation['cover_image'] = cover_url
-        else:
-            representation['cover_image'] = None
+        cover_url = instance.get_cover_image_url()
+        if cover_url and request and not cover_url.startswith('http'):
+            try:
+                cover_url = request.build_absolute_uri(cover_url)
+            except Exception:
+                pass
+        representation['cover_image'] = cover_url
             
         return representation
 
@@ -108,27 +94,13 @@ class HouseDetailSerializer(serializers.ModelSerializer):
         representation = super().to_representation(instance)
         request = self.context.get('request')
         
-        # 处理封面图：优先使用cover_image，没有则使用第一张关联图片
-        cover_url = None
-        if instance.cover_image:
-            cover_url = instance.cover_image.url
-        else:
-            # 如果没有封面图，尝试获取第一张关联图片
-            first_image = instance.images.first()
-            if first_image:
-                cover_url = first_image.image.url
-        
-        # 构建完整URL
-        if cover_url:
-            if request:
-                try:
-                    representation['cover_image'] = request.build_absolute_uri(cover_url)
-                except Exception:
-                    representation['cover_image'] = cover_url
-            else:
-                representation['cover_image'] = cover_url
-        else:
-            representation['cover_image'] = None
+        cover_url = instance.get_cover_image_url()
+        if cover_url and request and not cover_url.startswith('http'):
+            try:
+                cover_url = request.build_absolute_uri(cover_url)
+            except Exception:
+                pass
+        representation['cover_image'] = cover_url
             
         return representation
 
@@ -173,4 +145,3 @@ class HouseMapSerializer(serializers.ModelSerializer):
     class Meta:
         model = House
         fields = ['id', 'title', 'price', 'house_type', 'longitude', 'latitude']
-

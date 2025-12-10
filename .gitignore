@@ -25,3 +25,4 @@ staticfiles/
 *.swp
 celerybeat-schedule
 
+/data

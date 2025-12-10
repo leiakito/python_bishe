@@ -7,7 +7,56 @@ from django.conf import settings
 from datetime import datetime, timedelta
 import logging
 
+from apps.tasks.fang_scraper import FangTopScraper
+from apps.tasks.excel_importer import FangExcelImporter
+
 logger = logging.getLogger(__name__)
+
+
+@shared_task(bind=True, ignore_result=False)
+def crawl_fang_top_listings(self, run_immediately: bool = True):
+    """
+    run_immediately bool =false 
+    使用伪装请求头抓取房天下Top房源数据并导出为Excel
+    参数:
+        run_immediately: 是否立即执行爬虫, False时只记录跳过
+    """
+    if not run_immediately:
+        logger.info("Fang.com Top crawl skipped because run_immediately=False")
+        return {"skipped": True, "timestamp": datetime.now().isoformat()}
+    
+    scraper = FangTopScraper()
+    try:
+        result = scraper.run()
+        logger.info(
+            "Fang.com Top listings exported: %s items -> %s",
+            result.get("count"),
+            result.get("output_path"),
+        )
+        return result
+    except Exception as exc:
+        logger.exception("Fang.com Top crawl failed: %s", exc)
+        raise
+
+
+@shared_task(bind=True, ignore_result=False)
+def import_fang_excel_files(self):
+    """
+    扫描 data 目录下的 Excel, 将内容写入数据库
+    """
+    importer = FangExcelImporter()
+    try:
+        result = importer.run()
+        logger.info(
+            "Excel import finished: created=%s updated=%s errors=%s",
+            result.get("total_created"),
+            result.get("total_updated"),
+            result.get("total_errors"),
+        )
+        return result
+    except Exception as exc:
+        logger.exception("Excel import task failed: %s", exc)
+        raise
 
 
 @shared_task
@@ -205,4 +254,3 @@ def update_house_statistics():
     
     logger.info("房源统计更新完成")
     return "统计更新完成"
-

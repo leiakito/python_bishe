@@ -282,14 +282,12 @@ class HouseViewSet(viewsets.ModelViewSet):
         features = []
         for house in queryset:
             # 获取封面图URL
-            cover_image_url = None
-            if house.cover_image:
-                cover_image_url = request.build_absolute_uri(house.cover_image.url)
-            else:
-                # 如果没有封面图，使用第一张关联图片
-                first_image = house.images.first()
-                if first_image:
-                    cover_image_url = request.build_absolute_uri(first_image.image.url)
+            cover_image_url = house.get_cover_image_url()
+            if cover_image_url and not cover_image_url.startswith('http'):
+                try:
+                    cover_image_url = request.build_absolute_uri(cover_image_url)
+                except Exception:
+                    pass
             
             feature = {
                 "type": "Feature",
@@ -453,4 +451,3 @@ class TransactionViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(queryset, many=True)
         return success_response(data=serializer.data)
-

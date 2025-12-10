@@ -4,6 +4,7 @@ Django settings for realestate_project project.
 import os
 from pathlib import Path
 from datetime import timedelta
+from celery.schedules import crontab
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -144,8 +145,10 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
     'DEFAULT_RENDERER_CLASSES': (
         'rest_framework.renderers.JSONRenderer',
+        'rest_framework.renderers.BrowsableAPIRenderer',
     ),
     'EXCEPTION_HANDLER': 'apps.common.exceptions.custom_exception_handler',
+    'NON_FIELD_ERRORS_KEY': 'errors',
 }
 
 # JWT settings
@@ -171,6 +174,23 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
 ]
 CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
+
+# CSRF settings - 对于使用JWT的API端点,我们需要豁免CSRF
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
 
 # Celery Configuration
 CELERY_BROKER_URL = f"redis://{os.getenv('REDIS_HOST', 'localhost')}:{os.getenv('REDIS_PORT', '6379')}/{os.getenv('REDIS_DB', '0')}"
@@ -180,6 +200,52 @@ CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_ENABLE_UTC = False
+CELERY_BEAT_SCHEDULE = {}
+
+_fang_top_cron = os.getenv('FANG_TOP_CRONTAB', '*/5 * * * *').split()
+if len(_fang_top_cron) != 5:
+    _fang_top_cron = ['*/5', '*', '*', '*', '*']
+_fang_top_run_immediate = os.getenv('FANG_TOP_RUN_IMMEDIATELY', 'True') == 'True'
+
+#	•	FANG_TOP_CRONTAB：控制执行频率（可修改执行间隔） •	FANG_TOP_RUN_IMMEDIATELY：控制是否立刻执行（True/False）
+
+_fang_excel_cron = os.getenv('FANG_EXCEL_CRONTAB', '*/10 * * * *').split()
+if len(_fang_excel_cron) != 5:
+    _fang_excel_cron = ['*/10', '*', '*', '*', '*']
+_fang_excel_enabled = os.getenv('FANG_EXCEL_SCHEDULE_ENABLED', 'True') == 'True'
+
+if os.getenv('FANG_TOP_SCHEDULE_ENABLED', 'True') == 'True':
+    CELERY_BEAT_SCHEDULE['crawl_fang_top_listings'] = {
+        'task': 'apps.tasks.tasks.crawl_fang_top_listings',
+        'schedule': crontab(
+            minute=_fang_top_cron[0],
+            hour=_fang_top_cron[1],
+            day_of_month=_fang_top_cron[2],
+            month_of_year=_fang_top_cron[3],
+            day_of_week=_fang_top_cron[4],
+        ),
+        'options': {
+            'queue': os.getenv('FANG_TOP_CELERY_QUEUE', 'crawler'),
+        },
+        'kwargs': {
+            'run_immediately': _fang_top_run_immediate,
+        },
+    }
+
+if _fang_excel_enabled:
+    CELERY_BEAT_SCHEDULE['import_fang_excel_files'] = {
+        'task': 'apps.tasks.tasks.import_fang_excel_files',
+        'schedule': crontab(
+            minute=_fang_excel_cron[0],
+            hour=_fang_excel_cron[1],
+            day_of_month=_fang_excel_cron[2],
+            month_of_year=_fang_excel_cron[3],
+            day_of_week=_fang_excel_cron[4],
+        ),
+        'options': {
+            'queue': os.getenv('FANG_IMPORT_CELERY_QUEUE', 'crawler'),
+        },
+    }
 
 # Redis Cache
 CACHES = {
@@ -215,4 +281,3 @@ LOGGING = {
         'level': 'INFO',
     },
 }
-

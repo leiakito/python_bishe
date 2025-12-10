@@ -24,10 +24,16 @@ class UserRegisterSerializer(serializers.ModelSerializer):
     """
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True, label='确认密码')
+    phone = serializers.CharField(required=True, label='手机号')
+    email = serializers.EmailField(required=True, label='邮箱')
+    role = serializers.ChoiceField(choices=User.ROLE_CHOICES, default='user', label='角色')
     
     class Meta:
         model = User
         fields = ['username', 'password', 'password2', 'phone', 'email', 'role']
+        extra_kwargs = {
+            'username': {'required': True},
+        }
     
     def validate(self, attrs):
         if attrs['password'] != attrs['password2']:
@@ -35,23 +41,38 @@ class UserRegisterSerializer(serializers.ModelSerializer):
         return attrs
     
     def validate_phone(self, value):
+        if not value:
+            raise serializers.ValidationError("手机号不能为空")
+        # 验证手机号格式
+        import re
+        if not re.match(r'^1[3-9]\d{9}$', value):
+            raise serializers.ValidationError("请输入正确的手机号格式")
         if User.objects.filter(phone=value).exists():
             raise serializers.ValidationError("该手机号已被注册")
         return value
     
     def validate_email(self, value):
+        if not value:
+            raise serializers.ValidationError("邮箱不能为空")
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("该邮箱已被注册")
         return value
     
     def validate_username(self, value):
+        if not value:
+            raise serializers.ValidationError("用户名不能为空")
+        if len(value) < 3:
+            raise serializers.ValidationError("用户名长度至少3个字符")
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("该用户名已被注册")
         return value
     
     def create(self, validated_data):
         validated_data.pop('password2')
-        user = User.objects.create_user(**validated_data)
+        password = validated_data.pop('password')
+        user = User(**validated_data)
+        user.set_password(password)
+        user.save()
         return user
 
 

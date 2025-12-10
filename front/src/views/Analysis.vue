@@ -226,6 +226,229 @@
       </el-alert>
     </el-card>
 
+    <!-- 房源对比与分析报告 -->
+    <el-card class="comparison-card">
+      <template #header>
+        <div class="card-header">
+          <span>🔍 房源对比与分析报告</span>
+          <el-text type="info" size="small">选择最多4个房源进行对比分析</el-text>
+        </div>
+      </template>
+
+      <!-- 房源选择 -->
+      <div class="house-selector">
+        <el-form :inline="true">
+          <el-form-item label="选择房源">
+            <el-input
+              v-model="comparisonForm.houseIds"
+              placeholder="输入房源ID，用逗号分隔（如: 1,2,3,4）"
+              style="width: 400px"
+              clearable
+            >
+              <template #prepend>
+                <el-icon><House /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item>
+            <el-button 
+              type="primary" 
+              :loading="loading.comparison"
+              @click="handleCompareHouses"
+              :disabled="!comparisonForm.houseIds"
+            >
+              <el-icon><TrendCharts /></el-icon>
+              开始对比
+            </el-button>
+          </el-form-item>
+        </el-form>
+        
+        <el-alert
+          title="提示：您可以在房源列表页查看房源ID，或直接从详情页URL获取"
+          type="info"
+          :closable="false"
+        />
+      </div>
+
+      <!-- 对比结果 -->
+      <div v-if="comparisonResult && comparisonResult.houses.length > 0" class="comparison-result">
+        <el-divider>
+          <el-tag type="success" size="large">
+            对比结果 ({{ comparisonResult.houses.length }}套房源)
+          </el-tag>
+        </el-divider>
+
+        <!-- 对比表格 -->
+        <el-table 
+          :data="comparisonResult.houses" 
+          border 
+          stripe
+          style="margin-bottom: 20px"
+        >
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="title" label="标题" min-width="200" />
+          <el-table-column label="价格" width="120">
+            <template #default="{ row }">
+              <span style="color: #f56c6c; font-weight: bold;">
+                {{ formatPrice(row.price) }}万
+              </span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="unit_price" label="单价(元/㎡)" width="130" />
+          <el-table-column prop="house_type" label="户型" width="100" />
+          <el-table-column prop="area" label="面积(㎡)" width="100" />
+          <el-table-column prop="district_name" label="区域" width="120" />
+          <el-table-column label="综合评分" width="120">
+            <template #default="{ row }">
+              <el-tag :type="getScoreType(row.score)">
+                {{ row.score }}分
+              </el-tag>
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- 对比雷达图 -->
+        <div class="comparison-charts">
+          <el-row :gutter="20">
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>综合对比雷达图</template>
+                <v-chart :option="comparisonRadarOption" style="height: 350px" autoresize />
+              </el-card>
+            </el-col>
+            <el-col :span="12">
+              <el-card shadow="hover">
+                <template #header>价格对比柱状图</template>
+                <v-chart :option="comparisonBarOption" style="height: 350px" autoresize />
+              </el-card>
+            </el-col>
+          </el-row>
+        </div>
+
+        <!-- 分析报告 -->
+        <el-card shadow="hover" class="report-card" style="margin-top: 20px">
+          <template #header>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <span>📊 智能分析报告</span>
+              <el-button 
+                type="success" 
+                size="small"
+                @click="downloadReport"
+              >
+                <el-icon><Download /></el-icon>
+                下载报告
+              </el-button>
+            </div>
+          </template>
+
+          <div class="report-content" id="reportContent">
+            <!-- 报告标题 -->
+            <div class="report-header">
+              <h2>房源对比分析报告</h2>
+              <p class="report-date">生成时间: {{ new Date().toLocaleString('zh-CN') }}</p>
+            </div>
+
+            <!-- 概况 -->
+            <div class="report-section">
+              <h3>📌 对比概况</h3>
+              <el-descriptions :column="2" border>
+                <el-descriptions-item label="对比房源数">
+                  {{ comparisonResult.houses.length }} 套
+                </el-descriptions-item>
+                <el-descriptions-item label="价格区间">
+                  {{ formatPrice(comparisonResult.summary.min_price) }}万 - 
+                  {{ formatPrice(comparisonResult.summary.max_price) }}万
+                </el-descriptions-item>
+                <el-descriptions-item label="平均总价">
+                  {{ formatPrice(comparisonResult.summary.avg_price) }} 万
+                </el-descriptions-item>
+                <el-descriptions-item label="平均单价">
+                  {{ formatPrice(comparisonResult.summary.avg_unit_price) }} 元/㎡
+                </el-descriptions-item>
+                <el-descriptions-item label="最优性价比">
+                  ID: {{ comparisonResult.recommendation.best_value.id }} - 
+                  {{ comparisonResult.recommendation.best_value.title }}
+                </el-descriptions-item>
+                <el-descriptions-item label="最低单价">
+                  ID: {{ comparisonResult.recommendation.lowest_unit_price.id }} - 
+                  {{ formatPrice(comparisonResult.recommendation.lowest_unit_price.unit_price) }} 元/㎡
+                </el-descriptions-item>
+              </el-descriptions>
+            </div>
+
+            <!-- 推荐结果 -->
+            <div class="report-section">
+              <h3>⭐ 推荐结果</h3>
+              <el-alert 
+                :title="`最具性价比: ${comparisonResult.recommendation.best_value.title}`"
+                type="success"
+                :closable="false"
+                style="margin-bottom: 10px"
+              >
+                <template #default>
+                  <p>价格: {{ formatPrice(comparisonResult.recommendation.best_value.price) }}万</p>
+                  <p>单价: {{ formatPrice(comparisonResult.recommendation.best_value.unit_price) }} 元/㎡</p>
+                  <p>综合评分: {{ comparisonResult.recommendation.best_value.score }}分</p>
+                </template>
+              </el-alert>
+
+              <el-alert 
+                :title="`最低单价: ${comparisonResult.recommendation.lowest_unit_price.title}`"
+                type="info"
+                :closable="false"
+              >
+                <template #default>
+                  <p>单价: {{ formatPrice(comparisonResult.recommendation.lowest_unit_price.unit_price) }} 元/㎡</p>
+                  <p>总价: {{ formatPrice(comparisonResult.recommendation.lowest_unit_price.price) }}万</p>
+                </template>
+              </el-alert>
+            </div>
+
+            <!-- 详细对比 -->
+            <div class="report-section">
+              <h3>📋 详细对比</h3>
+              <div v-for="house in comparisonResult.houses" :key="house.id" class="house-detail-item">
+                <h4>{{ house.title }} (ID: {{ house.id }})</h4>
+                <el-row :gutter="20">
+                  <el-col :span="12">
+                    <p><strong>总价:</strong> {{ formatPrice(house.price) }}万</p>
+                    <p><strong>单价:</strong> {{ formatPrice(house.unit_price) }} 元/㎡</p>
+                    <p><strong>户型:</strong> {{ house.house_type }}</p>
+                    <p><strong>面积:</strong> {{ house.area }} ㎡</p>
+                  </el-col>
+                  <el-col :span="12">
+                    <p><strong>区域:</strong> {{ house.district_name }}</p>
+                    <p><strong>地址:</strong> {{ house.address }}</p>
+                    <p><strong>楼层:</strong> {{ house.floor }}/{{ house.total_floors }}层</p>
+                    <p><strong>综合评分:</strong> {{ house.score }}分</p>
+                  </el-col>
+                </el-row>
+                <el-divider />
+              </div>
+            </div>
+
+            <!-- 分析建议 -->
+            <div class="report-section">
+              <h3>💡 购房建议</h3>
+              <el-timeline>
+                <el-timeline-item 
+                  v-for="(suggestion, index) in comparisonResult.suggestions" 
+                  :key="index"
+                  :icon="index === 0 ? 'StarFilled' : 'More'"
+                  :type="index === 0 ? 'success' : 'primary'"
+                >
+                  {{ suggestion }}
+                </el-timeline-item>
+              </el-timeline>
+            </div>
+          </div>
+        </el-card>
+      </div>
+
+      <!-- 空状态 -->
+      <el-empty v-else-if="!loading.comparison" description="请输入房源ID开始对比" />
+    </el-card>
+
     <!-- 经纪人专属功能 -->
     <div v-if="isAgent" class="agent-section">
       <el-divider content-position="left">
@@ -485,7 +708,7 @@ import {
   marketTrendForecast,
   getDistrictHeatMap
 } from '@/api/analysis'
-import { getMapData } from '@/api/house'
+import { getMapData, getHouseDetail } from '@/api/house'
 import { getDistrictList } from '@/api/house'
 import { formatPrice } from '@/utils'
 import { ElMessage } from 'element-plus'
@@ -547,6 +770,14 @@ const heatMapData = ref([])
 // 房源地图分布数据
 const houseMapData = ref(null)
 
+// 房源对比表单
+const comparisonForm = reactive({
+  houseIds: ''
+})
+
+// 对比结果
+const comparisonResult = ref(null)
+
 const loading = reactive({
   priceTrend: false,
   districtComparison: false,
@@ -556,7 +787,8 @@ const loading = reactive({
   roi: false,
   marketTrend: false,
   heatMap: false,
-  houseMap: false
+  houseMap: false,
+  comparison: false
 })
 
 // 价格趋势图配置
@@ -840,6 +1072,77 @@ const houseDistributionOption = ref({
       animationDelay: function(idx) {
         return idx * 5
       }
+    }
+  ]
+})
+
+// 房源对比雷达图配置
+const comparisonRadarOption = ref({
+  tooltip: {},
+  legend: {
+    data: []
+  },
+  radar: {
+    indicator: [
+      { name: '价格优势', max: 100 },
+      { name: '面积', max: 100 },
+      { name: '楼层', max: 100 },
+      { name: '区域热度', max: 100 },
+      { name: '性价比', max: 100 }
+    ]
+  },
+  series: [
+    {
+      name: '房源对比',
+      type: 'radar',
+      data: []
+    }
+  ]
+})
+
+// 房源对比柱状图配置
+const comparisonBarOption = ref({
+  tooltip: {
+    trigger: 'axis',
+    axisPointer: {
+      type: 'shadow'
+    }
+  },
+  legend: {
+    data: ['总价', '单价']
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  xAxis: {
+    type: 'category',
+    data: []
+  },
+  yAxis: [
+    {
+      type: 'value',
+      name: '总价(万元)'
+    },
+    {
+      type: 'value',
+      name: '单价(元/㎡)'
+    }
+  ],
+  series: [
+    {
+      name: '总价',
+      type: 'bar',
+      data: [],
+      yAxisIndex: 0
+    },
+    {
+      name: '单价',
+      type: 'bar',
+      data: [],
+      yAxisIndex: 1
     }
   ]
 })
@@ -1301,6 +1604,216 @@ async function fetchHouseDistribution() {
   }
 }
 
+// 房源对比
+async function handleCompareHouses() {
+  if (!comparisonForm.houseIds) {
+    ElMessage.warning('请输入房源ID')
+    return
+  }
+
+  // 解析房源ID
+  const ids = comparisonForm.houseIds.split(',').map(id => id.trim()).filter(id => id)
+  
+  if (ids.length < 2) {
+    ElMessage.warning('请至少选择2个房源进行对比')
+    return
+  }
+
+  if (ids.length > 4) {
+    ElMessage.warning('最多只能对比4个房源')
+    return
+  }
+
+  loading.comparison = true
+  try {
+    // 获取所有房源详情
+    const housePromises = ids.map(id => getHouseDetail(id))
+    const responses = await Promise.all(housePromises)
+    
+    const houses = responses
+      .filter(res => res.code === 200)
+      .map(res => res.data)
+
+    if (houses.length === 0) {
+      ElMessage.error('未找到有效的房源')
+      return
+    }
+
+    // 计算统计数据
+    const prices = houses.map(h => h.price)
+    const unitPrices = houses.map(h => h.unit_price)
+    const areas = houses.map(h => h.area)
+    
+    const summary = {
+      min_price: Math.min(...prices),
+      max_price: Math.max(...prices),
+      avg_price: (prices.reduce((a, b) => a + b, 0) / prices.length).toFixed(2),
+      avg_unit_price: (unitPrices.reduce((a, b) => a + b, 0) / unitPrices.length).toFixed(2)
+    }
+
+    // 计算每个房源的综合评分
+    const housesWithScore = houses.map(house => {
+      // 价格分数（价格越低分数越高）
+      const priceScore = ((summary.max_price - house.price) / (summary.max_price - summary.min_price || 1)) * 100
+      
+      // 单价分数
+      const maxUnitPrice = Math.max(...unitPrices)
+      const minUnitPrice = Math.min(...unitPrices)
+      const unitPriceScore = ((maxUnitPrice - house.unit_price) / (maxUnitPrice - minUnitPrice || 1)) * 100
+      
+      // 面积分数
+      const maxArea = Math.max(...areas)
+      const areaScore = (house.area / maxArea) * 100
+      
+      // 楼层分数（中间楼层较好）
+      const floorRatio = house.floor / house.total_floors
+      const floorScore = (1 - Math.abs(floorRatio - 0.5) * 2) * 100
+      
+      // 区域热度分数（简单模拟）
+      const districtScore = 70 + Math.random() * 30
+      
+      // 综合评分
+      const score = (
+        priceScore * 0.3 +
+        unitPriceScore * 0.3 +
+        areaScore * 0.2 +
+        floorScore * 0.1 +
+        districtScore * 0.1
+      ).toFixed(1)
+
+      return {
+        ...house,
+        score: parseFloat(score),
+        priceScore: priceScore.toFixed(1),
+        unitPriceScore: unitPriceScore.toFixed(1),
+        areaScore: areaScore.toFixed(1),
+        floorScore: floorScore.toFixed(1),
+        districtScore: districtScore.toFixed(1)
+      }
+    })
+
+    // 排序找出推荐
+    const sortedByScore = [...housesWithScore].sort((a, b) => b.score - a.score)
+    const sortedByUnitPrice = [...housesWithScore].sort((a, b) => a.unit_price - b.unit_price)
+
+    // 生成建议
+    const suggestions = [
+      `综合评分最高的是"${sortedByScore[0].title}"，建议优先考虑。`,
+      `单价最低的是"${sortedByUnitPrice[0].title}"，性价比较高。`,
+      `平均总价${summary.avg_price}万元，平均单价${summary.avg_unit_price}元/㎡。`,
+      houses.length >= 3 ? `共对比${houses.length}套房源，价格区间${summary.min_price}-${summary.max_price}万元。` : ''
+    ].filter(s => s)
+
+    comparisonResult.value = {
+      houses: housesWithScore,
+      summary,
+      recommendation: {
+        best_value: sortedByScore[0],
+        lowest_unit_price: sortedByUnitPrice[0]
+      },
+      suggestions
+    }
+
+    // 更新图表
+    updateComparisonCharts(housesWithScore)
+    
+    ElMessage.success('对比完成')
+  } catch (error) {
+    console.error('对比失败:', error)
+    ElMessage.error('对比失败，请检查房源ID是否正确')
+  } finally {
+    loading.comparison = false
+  }
+}
+
+// 更新对比图表
+function updateComparisonCharts(houses) {
+  // 更新雷达图
+  const radarData = houses.map(house => ({
+    name: `ID ${house.id}`,
+    value: [
+      parseFloat(house.priceScore),
+      parseFloat(house.areaScore),
+      parseFloat(house.floorScore),
+      parseFloat(house.districtScore),
+      house.score
+    ]
+  }))
+
+  comparisonRadarOption.value.legend.data = houses.map(h => `ID ${h.id}`)
+  comparisonRadarOption.value.series[0].data = radarData
+
+  // 更新柱状图
+  comparisonBarOption.value.xAxis.data = houses.map(h => `ID ${h.id}`)
+  comparisonBarOption.value.series[0].data = houses.map(h => h.price)
+  comparisonBarOption.value.series[1].data = houses.map(h => h.unit_price)
+}
+
+// 下载报告
+function downloadReport() {
+  const reportContent = document.getElementById('reportContent')
+  if (!reportContent) {
+    ElMessage.error('报告内容不存在')
+    return
+  }
+
+  // 简单的文本版报告
+  let reportText = '房源对比分析报告\n'
+  reportText += '='.repeat(50) + '\n\n'
+  reportText += `生成时间: ${new Date().toLocaleString('zh-CN')}\n\n`
+  
+  reportText += '对比概况\n'
+  reportText += '-'.repeat(50) + '\n'
+  reportText += `对比房源数: ${comparisonResult.value.houses.length}套\n`
+  reportText += `价格区间: ${formatPrice(comparisonResult.value.summary.min_price)}万 - ${formatPrice(comparisonResult.value.summary.max_price)}万\n`
+  reportText += `平均总价: ${formatPrice(comparisonResult.value.summary.avg_price)}万\n`
+  reportText += `平均单价: ${formatPrice(comparisonResult.value.summary.avg_unit_price)}元/㎡\n\n`
+  
+  reportText += '推荐结果\n'
+  reportText += '-'.repeat(50) + '\n'
+  reportText += `最具性价比: ${comparisonResult.value.recommendation.best_value.title}\n`
+  reportText += `  价格: ${formatPrice(comparisonResult.value.recommendation.best_value.price)}万\n`
+  reportText += `  单价: ${formatPrice(comparisonResult.value.recommendation.best_value.unit_price)}元/㎡\n`
+  reportText += `  评分: ${comparisonResult.value.recommendation.best_value.score}分\n\n`
+  
+  reportText += '详细对比\n'
+  reportText += '-'.repeat(50) + '\n'
+  comparisonResult.value.houses.forEach(house => {
+    reportText += `\n${house.title} (ID: ${house.id})\n`
+    reportText += `  总价: ${formatPrice(house.price)}万\n`
+    reportText += `  单价: ${formatPrice(house.unit_price)}元/㎡\n`
+    reportText += `  户型: ${house.house_type}\n`
+    reportText += `  面积: ${house.area}㎡\n`
+    reportText += `  区域: ${house.district_name}\n`
+    reportText += `  地址: ${house.address}\n`
+    reportText += `  综合评分: ${house.score}分\n`
+  })
+  
+  reportText += '\n购房建议\n'
+  reportText += '-'.repeat(50) + '\n'
+  comparisonResult.value.suggestions.forEach((suggestion, index) => {
+    reportText += `${index + 1}. ${suggestion}\n`
+  })
+
+  // 创建并下载文件
+  const blob = new Blob([reportText], { type: 'text/plain;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `房源对比分析报告_${Date.now()}.txt`
+  link.click()
+  URL.revokeObjectURL(url)
+  
+  ElMessage.success('报告已下载')
+}
+
+// 获取评分类型
+function getScoreType(score) {
+  if (score >= 80) return 'success'
+  if (score >= 60) return 'warning'
+  return 'danger'
+}
+
 function fetchAllData() {
   fetchPriceTrend()
   fetchDistrictComparison()
@@ -1416,6 +1929,85 @@ onMounted(() => {
 
   .text-success {
     color: #67c23a;
+  }
+
+  // 房源对比样式
+  .comparison-card {
+    margin-bottom: 20px;
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .house-selector {
+      margin-bottom: 20px;
+    }
+
+    .comparison-result {
+      .comparison-charts {
+        margin: 20px 0;
+      }
+
+      .report-card {
+        .report-content {
+          .report-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #e4e7ed;
+
+            h2 {
+              font-size: 28px;
+              color: #303133;
+              margin-bottom: 10px;
+            }
+
+            .report-date {
+              color: #909399;
+              font-size: 14px;
+            }
+          }
+
+          .report-section {
+            margin-bottom: 30px;
+
+            h3 {
+              font-size: 20px;
+              color: #303133;
+              margin-bottom: 15px;
+              padding-left: 10px;
+              border-left: 4px solid #409eff;
+            }
+
+            .house-detail-item {
+              margin-bottom: 20px;
+              padding: 15px;
+              background: #f5f7fa;
+              border-radius: 8px;
+
+              h4 {
+                font-size: 16px;
+                color: #303133;
+                margin-bottom: 15px;
+              }
+
+              p {
+                margin: 8px 0;
+                color: #606266;
+                line-height: 1.8;
+
+                strong {
+                  color: #303133;
+                  margin-right: 8px;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
   }
 }
 </style>
